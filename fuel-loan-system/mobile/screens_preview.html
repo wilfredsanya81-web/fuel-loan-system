@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Fuel Loan Agent — Screen preview &amp; PNG export</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  <style>
+    * { box-sizing: border-box; }
+    body { font-family: Roboto, system-ui, -apple-system, sans-serif; margin: 0; padding: 1rem; background: #eee; }
+    h2 { margin: 0 0 0.5rem; font-size: 1rem; color: #666; }
+    .controls { margin-bottom: 1.5rem; padding: 1rem; background: #fff; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+    .controls button { padding: 0.5rem 1rem; margin-right: 0.5rem; background: #1b5e20; color: #fff; border: none; border-radius: 6px; cursor: pointer; font-weight: 500; }
+    .controls button:hover { background: #2e7d32; }
+    .controls button.secondary { background: #666; }
+    .screens { display: flex; flex-wrap: wrap; gap: 1.5rem; align-items: flex-start; }
+    .screen-wrap { background: #111; padding: 12px; border-radius: 24px; box-shadow: 0 4px 20px rgba(0,0,0,0.3); }
+    .screen-wrap canvas { display: block; border-radius: 12px; }
+    .phone-frame { width: 360px; height: 640px; overflow: hidden; border-radius: 12px; background: #fff; position: relative; }
+
+    /* Flutter Material-style phone screens */
+    .screen { width: 360px; height: 640px; overflow: hidden; background: #f5f5f5; font-size: 14px; color: #1a1a1a; display: flex; flex-direction: column; }
+    .appbar { height: 56px; background: #1b5e20; color: #fff; display: flex; align-items: center; justify-content: center; font-weight: 600; font-size: 18px; position: relative; }
+    .appbar .action { position: absolute; right: 8px; top: 50%; transform: translateY(-50%); width: 48px; height: 48px; display: flex; align-items: center; justify-content: center; cursor: default; }
+    .appbar .action::after { content: ''; width: 24px; height: 24px; background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23fff'%3E%3Cpath d='M17 7l-1.41 1.41L18.17 11H8v2h10.17l-2.58 2.58L17 17l5-5zM4 5h8V3H4c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h8v-2H4V5z'/%3E%3C/svg%3E") no-repeat center; }
+    .content { flex: 1; overflow-y: auto; padding: 16px; }
+    .card { background: #fff; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.08); padding: 16px; margin-bottom: 12px; }
+    .btn { display: inline-flex; align-items: center; justify-content: center; padding: 12px 16px; border-radius: 8px; font-weight: 500; border: none; cursor: default; font-size: 14px; }
+    .btn-primary { background: #1b5e20; color: #fff; }
+    .btn-outline { background: transparent; border: 1px solid rgba(255,255,255,0.7); color: #fff; }
+    .input-wrap { margin-bottom: 16px; }
+    .input-wrap label { display: block; margin-bottom: 4px; font-weight: 500; color: #424242; font-size: 12px; }
+    .input-wrap input, .input-wrap select { width: 100%; padding: 12px 16px; border: 1px solid #ccc; border-radius: 8px; font-size: 14px; background: #fff; }
+    .nav-bar { height: 80px; background: #fff; border-top: 1px solid #e0e0e0; display: flex; align-items: center; justify-content: space-around; padding-bottom: env(safe-area-inset-bottom, 0); }
+    .nav-item { display: flex; flex-direction: column; align-items: center; gap: 4px; font-size: 12px; color: #666; }
+    .nav-item.active { color: #1b5e20; font-weight: 500; }
+    .nav-item .icon { width: 24px; height: 24px; background: #9e9e9e; border-radius: 4px; }
+    .nav-item.active .icon { background: #1b5e20; }
+    .kpi-value { font-size: 24px; font-weight: 700; color: #1b5e20; }
+    .kpi-overdue { color: #e65100; }
+    .kpi-label { font-size: 12px; color: #666; }
+    .list-tile { padding: 16px; border-bottom: 1px solid #eee; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px; }
+    .list-tile:last-child { border-bottom: none; }
+    .status { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 12px; font-weight: 500; }
+    .status-active { background: #e8f5e9; color: #2e7d32; }
+    .status-overdue { background: #fff3e0; color: #e65100; }
+    .status-paid { background: #e3f2fd; color: #1565c0; }
+    .row { display: flex; justify-content: space-between; padding: 6px 0; font-size: 14px; }
+    .row span:first-child { color: #666; font-weight: 500; }
+    .empty { text-align: center; padding: 32px 16px; color: #757575; }
+    .login-bg { background: linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%); min-height: 100%; display: flex; align-items: center; justify-content: center; padding: 24px; }
+    .login-card { background: #fff; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.1); padding: 24px; width: 100%; max-width: 320px; }
+    .login-card h1 { margin: 0 0 8px; font-size: 20px; text-align: center; color: #1b5e20; }
+    .login-sub { margin: 0 0 24px; text-align: center; color: #666; font-size: 13px; }
+    .icon-placeholder { width: 48px; height: 48px; background: #1b5e20; border-radius: 50%; margin: 0 auto 16px; opacity: 0.3; }
+  </style>
+</head>
+<body>
+  <div class="controls">
+    <h2>Fuel Loan Agent — Flutter screen mockups</h2>
+    <p style="margin: 0 0 0.5rem; color: #666; font-size: 14px;">Open this file in a browser. Click &quot;Export all as PNG&quot; to download each screen as a PNG (no Flutter required).</p>
+    <button type="button" id="exportAll">Export all as PNG</button>
+    <button type="button" class="secondary" id="exportOne">Export selected...</button>
+  </div>
+
+  <div class="screens" id="screens">
+    <!-- 1. Login -->
+    <div class="screen-wrap" data-name="01_login">
+      <div class="phone-frame">
+        <div class="screen" id="screen-login">
+          <div class="login-bg">
+            <div class="login-card">
+              <div class="icon-placeholder"></div>
+              <h1>Fuel Loan Agent</h1>
+              <p class="login-sub">Sign in to continue</p>
+              <div class="input-wrap">
+                <label>Phone number</label>
+                <input type="text" value="e.g. 256700123456" readonly />
+              </div>
+              <div class="input-wrap">
+                <label>Password</label>
+                <input type="password" value="••••••••" readonly />
+              </div>
+              <button type="button" class="btn btn-primary" style="width:100%;margin-top:8px;">Sign in</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 2. Home (Dashboard tab) -->
+    <div class="screen-wrap" data-name="02_home_dashboard">
+      <div class="phone-frame">
+        <div class="screen">
+          <div class="appbar">Fuel Loan Agent <span class="action"></span></div>
+          <div class="content">
+            <div class="card">
+              <div class="kpi-label">Active loans</div>
+              <div class="kpi-value">12</div>
+            </div>
+            <div class="card">
+              <div class="kpi-label">Overdue loans</div>
+              <div class="kpi-value kpi-overdue">3</div>
+            </div>
+            <button type="button" class="btn btn-primary" style="width:100%;margin-top:8px;">Issue new loan</button>
+            <button type="button" class="btn btn-outline" style="width:100%;margin-top:8px;color:#1b5e20;border-color:#1b5e20;">View all loans</button>
+          </div>
+          <div class="nav-bar">
+            <div class="nav-item active"><div class="icon"></div>Dashboard</div>
+            <div class="nav-item"><div class="icon"></div>Loans</div>
+            <div class="nav-item"><div class="icon"></div>Riders</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 3. Loans list -->
+    <div class="screen-wrap" data-name="03_loans_list">
+      <div class="phone-frame">
+        <div class="screen">
+          <div class="appbar">Fuel Loan Agent <span class="action"></span></div>
+          <div class="content">
+            <div class="card list-tile">
+              <div><strong>Loan #101</strong></div>
+              <span class="status status-active">ACTIVE</span>
+              <div style="width:100%;font-size:12px;color:#666;">Outstanding: 55,000 UGX · Due: 2025-02-01</div>
+            </div>
+            <div class="card list-tile">
+              <div><strong>Loan #102</strong></div>
+              <span class="status status-overdue">OVERDUE</span>
+              <div style="width:100%;font-size:12px;color:#666;">Outstanding: 34,500 UGX · Due: 2025-01-30</div>
+            </div>
+          </div>
+          <div class="nav-bar">
+            <div class="nav-item"><div class="icon"></div>Dashboard</div>
+            <div class="nav-item active"><div class="icon"></div>Loans</div>
+            <div class="nav-item"><div class="icon"></div>Riders</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 4. Search rider -->
+    <div class="screen-wrap" data-name="04_search_rider">
+      <div class="phone-frame">
+        <div class="screen">
+          <div class="appbar">Fuel Loan Agent <span class="action"></span></div>
+          <div class="content">
+            <div class="input-wrap">
+              <label>Search rider (name, phone, national ID, bike)</label>
+              <input type="text" value="John" readonly />
+            </div>
+            <div class="card list-tile">
+              <div><strong>John Okello</strong></div>
+              <button type="button" class="btn btn-primary btn-sm">Issue loan</button>
+              <div style="width:100%;font-size:12px;color:#666;">256700111111 · ACTIVE</div>
+            </div>
+            <div class="card list-tile">
+              <div><strong>Peter Mugisha</strong></div>
+              <button type="button" class="btn btn-primary btn-sm">Issue loan</button>
+              <div style="width:100%;font-size:12px;color:#666;">256700222222 · ACTIVE</div>
+            </div>
+          </div>
+          <div class="nav-bar">
+            <div class="nav-item"><div class="icon"></div>Dashboard</div>
+            <div class="nav-item"><div class="icon"></div>Loans</div>
+            <div class="nav-item active"><div class="icon"></div>Riders</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 5. Issue loan -->
+    <div class="screen-wrap" data-name="05_issue_loan">
+      <div class="phone-frame">
+        <div class="screen">
+          <div class="appbar">Issue loan</div>
+          <div class="content">
+            <div class="input-wrap">
+              <label>Rider ID</label>
+              <input type="text" value="1" readonly />
+            </div>
+            <div class="input-wrap">
+              <label>Principal amount (UGX)</label>
+              <input type="text" value="50000" readonly />
+            </div>
+            <button type="button" class="btn btn-primary" style="width:100%;">Create loan</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 6. Loan detail -->
+    <div class="screen-wrap" data-name="06_loan_detail">
+      <div class="phone-frame">
+        <div class="screen">
+          <div class="appbar">Loan #101</div>
+          <div class="content">
+            <div class="card">
+              <div class="row"><span>Status</span><span class="status status-active">ACTIVE</span></div>
+              <div class="row"><span>Principal</span><span>50,000 UGX</span></div>
+              <div class="row"><span>Service charge</span><span>5,000 UGX</span></div>
+              <div class="row"><span>Outstanding</span><span>55,000 UGX</span></div>
+              <div class="row"><span>Total penalty</span><span>0 UGX</span></div>
+              <div class="row"><span>Due at</span><span>2025-02-01 14:00</span></div>
+            </div>
+            <div class="card">
+              <strong>John Okello</strong> · 256700111111
+            </div>
+            <div class="card">
+              <strong>Payments (2)</strong>
+              <div class="row"><span>20,000 UGX</span><span>CASH · 2025-02-01 10:00</span></div>
+              <div class="row"><span>10,000 UGX</span><span>MTN · 2025-01-31 18:00</span></div>
+            </div>
+            <button type="button" class="btn btn-primary" style="width:100%;">Record payment</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 7. Record payment -->
+    <div class="screen-wrap" data-name="07_record_payment">
+      <div class="phone-frame">
+        <div class="screen">
+          <div class="appbar">Record payment · Loan #101</div>
+          <div class="content">
+            <div class="input-wrap">
+              <label>Amount (UGX)</label>
+              <input type="text" value="55000" readonly />
+            </div>
+            <div class="input-wrap">
+              <label>Payment method</label>
+              <select><option>CASH</option><option>MTN</option><option>AIRTEL</option><option>BANK</option><option>OTHER</option></select>
+            </div>
+            <button type="button" class="btn btn-primary" style="width:100%;">Record payment</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    (function() {
+      if (typeof html2canvas === 'undefined') {
+        document.querySelector('.controls').innerHTML += '<p style="color:#c62828;margin-top:8px;">html2canvas failed to load. Use a working internet connection or open from a server.</p>';
+        return;
+      }
+
+      function getScreenElement(wrap) {
+        return wrap.querySelector('.phone-frame .screen') || wrap.querySelector('.screen') || wrap.querySelector('.phone-frame');
+      }
+
+      function capture(name, element) {
+        return new Promise(function(resolve, reject) {
+          html2canvas(element, {
+            scale: 2,
+            useCORS: true,
+            allowTaint: true,
+            backgroundColor: '#ffffff',
+            width: 360,
+            height: 640,
+            windowWidth: 360,
+            windowHeight: 640,
+            scrollX: 0,
+            scrollY: 0
+          }).then(function(canvas) {
+            canvas.toBlob(function(blob) {
+              if (!blob) { reject(new Error('toBlob failed')); return; }
+              var a = document.createElement('a');
+              a.href = URL.createObjectURL(blob);
+              a.download = name + '.png';
+              a.click();
+              URL.revokeObjectURL(a.href);
+              resolve();
+            }, 'image/png', 1);
+          }).catch(reject);
+        });
+      }
+
+      document.getElementById('exportAll').addEventListener('click', function() {
+        var btn = this;
+        btn.disabled = true;
+        btn.textContent = 'Exporting…';
+        var wraps = document.querySelectorAll('.screen-wrap[data-name]');
+        var i = 0;
+        function next() {
+          if (i >= wraps.length) {
+            btn.disabled = false;
+            btn.textContent = 'Export all as PNG';
+            return;
+          }
+          var wrap = wraps[i];
+          var name = wrap.getAttribute('data-name');
+          var el = getScreenElement(wrap);
+          if (!el) { i++; setTimeout(next, 100); return; }
+          capture(name, el).then(function() {
+            i++;
+            setTimeout(next, 300);
+          }).catch(function() {
+            i++;
+            setTimeout(next, 100);
+          });
+        }
+        next();
+      });
+
+      document.getElementById('exportOne').addEventListener('click', function() {
+        var names = [];
+        document.querySelectorAll('.screen-wrap[data-name]').forEach(function(w) {
+          names.push(w.getAttribute('data-name'));
+        });
+        var choice = window.prompt('Enter screen number (1-' + names.length + ') or name, e.g. 01_login or 06_loan_detail', '1');
+        if (!choice) return;
+        var name = choice.trim();
+        if (/^\d+$/.test(name)) {
+          var idx = parseInt(name, 10) - 1;
+          if (idx >= 0 && idx < names.length) name = names[idx];
+        }
+        if (names.indexOf(name) === -1) name = names[0];
+        var wrap = document.querySelector('.screen-wrap[data-name="' + name + '"]');
+        if (wrap) capture(name, getScreenElement(wrap)).catch(function() { alert('Export failed'); });
+      });
+    })();
+  </script>
+</body>
+</html>

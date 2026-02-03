@@ -1,0 +1,45 @@
+.dashboard h1 {
+  margin: 0 0 1.5rem;
+  font-size: 1.5rem;
+}
+
+.kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 1rem;
+}
+
+.kpi-card {
+  background: #fff;
+  border-radius: 8px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+  padding: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.kpi-card.kpi-wide {
+  grid-column: span 2;
+}
+
+.kpi-label {
+  font-size: 0.875rem;
+  color: #666;
+}
+
+.kpi-value {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #1b5e20;
+}
+
+.kpi-value.kpi-overdue {
+  color: #e65100;
+}
+
+@media (max-width: 600px) {
+  .kpi-card.kpi-wide {
+    grid-column: span 1;
+  }
+}

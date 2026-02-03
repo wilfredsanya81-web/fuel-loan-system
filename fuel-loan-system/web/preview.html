@@ -1,0 +1,374 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Fuel Loan Admin — UI Preview</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; }
+    body { margin: 0; font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif; background: #f5f5f5; color: #1a1a1a; }
+    input, select, button { font: inherit; }
+    button:disabled { opacity: 0.6; cursor: not-allowed; }
+
+    /* Login */
+    .login-page { min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 1rem; background: linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%); }
+    .login-card { width: 100%; max-width: 400px; background: #fff; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.1); padding: 2rem; }
+    .login-card h1 { margin: 0 0 0.25rem; font-size: 1.5rem; text-align: center; color: #1b5e20; }
+    .login-subtitle { margin: 0 0 1.5rem; text-align: center; color: #666; font-size: 0.9rem; }
+    .form-group { margin-bottom: 1rem; }
+    .form-group label { display: block; margin-bottom: 0.35rem; font-weight: 500; }
+    .form-group input { width: 100%; padding: 0.5rem 0.75rem; border: 1px solid #ccc; border-radius: 6px; }
+    .form-group input:focus { outline: none; border-color: #1b5e20; box-shadow: 0 0 0 2px rgba(27,94,32,0.2); }
+    .login-btn { width: 100%; padding: 0.75rem; margin-top: 0.5rem; background: #1b5e20; color: #fff; border: none; border-radius: 6px; font-weight: 500; cursor: pointer; }
+    .login-btn:hover { background: #2e7d32; }
+    .preview-note { font-size: 0.8rem; color: #757575; text-align: center; margin-top: 1rem; }
+
+    /* App layout (hidden until "logged in") */
+    .app { display: none; min-height: 100vh; flex-direction: column; }
+    .app.visible { display: flex; }
+    .layout-header { display: flex; align-items: center; justify-content: space-between; padding: 0.75rem 1.5rem; background: #1b5e20; color: #fff; box-shadow: 0 1px 3px rgba(0,0,0,0.12); }
+    .layout-title { margin: 0; font-size: 1.25rem; font-weight: 600; }
+    .layout-user { display: flex; align-items: center; gap: 0.75rem; }
+    .btn-outline { background: transparent; color: #fff; border: 1px solid rgba(255,255,255,0.7); padding: 0.35rem 0.75rem; border-radius: 6px; cursor: pointer; font-size: 0.875rem; }
+    .btn-outline:hover { background: rgba(255,255,255,0.15); }
+    .layout-nav { display: flex; padding: 0 1rem; background: #fff; border-bottom: 1px solid #e0e0e0; }
+    .nav-link { padding: 0.875rem 1.25rem; color: #424242; font-weight: 500; text-decoration: none; border-bottom: 2px solid transparent; margin-bottom: -1px; cursor: pointer; }
+    .nav-link:hover { color: #1b5e20; }
+    .nav-link.active { color: #1b5e20; border-bottom-color: #1b5e20; }
+    .layout-main { flex: 1; padding: 1.5rem; max-width: 1400px; width: 100%; margin: 0 auto; }
+    .page { display: none; }
+    .page.visible { display: block; }
+
+    /* Dashboard */
+    .dashboard h1 { margin: 0 0 1.5rem; font-size: 1.5rem; }
+    .kpi-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 1rem; }
+    .kpi-card { background: #fff; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.08); padding: 1.25rem; display: flex; flex-direction: column; gap: 0.5rem; }
+    .kpi-card.kpi-wide { grid-column: span 2; }
+    .kpi-label { font-size: 0.875rem; color: #666; }
+    .kpi-value { font-size: 1.5rem; font-weight: 700; color: #1b5e20; }
+    .kpi-value.kpi-overdue { color: #e65100; }
+    @media (max-width: 600px) { .kpi-card.kpi-wide { grid-column: span 1; } }
+
+    /* Cards, tables, forms */
+    .card { background: #fff; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.08); padding: 1.25rem; margin-bottom: 1rem; }
+    .card h2 { margin: 0 0 1rem; font-size: 1.125rem; }
+    .table-wrap { overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; }
+    th, td { padding: 0.75rem 1rem; text-align: left; border-bottom: 1px solid #eee; }
+    th { font-weight: 600; color: #424242; background: #fafafa; }
+    tr:hover td { background: #f5f5f5; }
+    .btn { padding: 0.5rem 1rem; border-radius: 6px; font-weight: 500; cursor: pointer; border: 1px solid transparent; text-decoration: none; display: inline-block; font-size: 0.875rem; }
+    .btn-primary { background: #1b5e20; color: #fff; }
+    .btn-primary:hover { background: #2e7d32; }
+    .btn-sm { padding: 0.35rem 0.75rem; font-size: 0.8rem; }
+    .status-badge { display: inline-block; padding: 0.2rem 0.5rem; border-radius: 4px; font-size: 0.8rem; font-weight: 500; }
+    .status-active { background: #e8f5e9; color: #2e7d32; }
+    .status-overdue { background: #fff3e0; color: #e65100; }
+    .status-paid { background: #e3f2fd; color: #1565c0; }
+    .status-suspended { background: #ffebee; color: #c62828; }
+    .form-group input.full-width { max-width: none; }
+    select.full-width { max-width: 320px; width: 100%; padding: 0.5rem 0.75rem; border: 1px solid #ccc; border-radius: 6px; }
+    .error-msg { color: #c62828; font-size: 0.875rem; margin-top: 0.5rem; }
+    .empty { text-align: center; padding: 2rem; color: #757575; }
+
+    /* Loan detail */
+    .detail-actions { margin-top: 1rem; }
+    .detail-actions .btn { margin-right: 0.5rem; }
+  </style>
+</head>
+<body>
+  <!-- Login (visible by default) -->
+  <div id="loginPage" class="login-page">
+    <div class="login-card">
+      <h1>Fuel Loan Admin</h1>
+      <p class="login-subtitle">Sign in to continue</p>
+      <form id="loginForm">
+        <div class="form-group">
+          <label for="phone">Phone number</label>
+          <input id="phone" type="text" placeholder="e.g. 256700123456" value="256700000000" />
+        </div>
+        <div class="form-group">
+          <label for="password">Password</label>
+          <input id="password" type="password" placeholder="Password" value="••••••••" />
+        </div>
+        <button type="submit" class="login-btn">Sign in</button>
+      </form>
+      <p class="preview-note">UI preview — any credentials work</p>
+    </div>
+  </div>
+
+  <!-- Main app (hidden until login) -->
+  <div id="app" class="app">
+    <header class="layout-header">
+      <h1 class="layout-title">Fuel Loan Admin</h1>
+      <div class="layout-user">
+        <span>Admin User</span>
+        <button type="button" class="btn-outline" id="btnLogout">Logout</button>
+      </div>
+    </header>
+    <nav class="layout-nav">
+      <a href="#" class="nav-link active" data-page="dashboard">Dashboard</a>
+      <a href="#" class="nav-link" data-page="loans">Loans</a>
+      <a href="#" class="nav-link" data-page="riders">Riders</a>
+      <a href="#" class="nav-link" data-page="reports">Reports</a>
+    </nav>
+    <main class="layout-main">
+      <!-- Dashboard -->
+      <div id="page-dashboard" class="page visible">
+        <h1>Dashboard</h1>
+        <div class="kpi-grid">
+          <div class="kpi-card"><span class="kpi-label">Active loans</span><span class="kpi-value">12</span></div>
+          <div class="kpi-card"><span class="kpi-label">Overdue loans</span><span class="kpi-value kpi-overdue">3</span></div>
+          <div class="kpi-card"><span class="kpi-label">Paid loans</span><span class="kpi-value">87</span></div>
+          <div class="kpi-card"><span class="kpi-label">Active riders</span><span class="kpi-value">45</span></div>
+          <div class="kpi-card kpi-wide"><span class="kpi-label">Total disbursed (UGX)</span><span class="kpi-value">5,420,000</span></div>
+          <div class="kpi-card kpi-wide"><span class="kpi-label">Total collected (UGX)</span><span class="kpi-value">4,890,500</span></div>
+        </div>
+      </div>
+      <!-- Loans -->
+      <div id="page-loans" class="page">
+        <h1>Loans</h1>
+        <div class="card" style="margin-bottom: 1rem;">
+          <div class="form-group" style="margin-bottom: 0;">
+            <label>Status filter</label>
+            <select id="loanFilter" class="full-width">
+              <option value="">All</option>
+              <option value="ACTIVE">Active</option>
+              <option value="OVERDUE">Overdue</option>
+              <option value="PAID">Paid</option>
+            </select>
+          </div>
+        </div>
+        <div class="card table-wrap">
+          <table>
+            <thead>
+              <tr><th>ID</th><th>Rider</th><th>Principal</th><th>Outstanding</th><th>Status</th><th>Due at</th><th></th></tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>101</td><td>John Okello (256700111111)</td><td>50,000 UGX</td><td>55,000 UGX</td>
+                <td><span class="status-badge status-active">ACTIVE</span></td><td>2025-02-01 14:00</td>
+                <td><a href="#" class="btn btn-primary btn-sm" data-view-loan="101">View</a></td>
+              </tr>
+              <tr>
+                <td>102</td><td>Peter Mugisha (256700222222)</td><td>30,000 UGX</td><td>34,500 UGX</td>
+                <td><span class="status-badge status-overdue">OVERDUE</span></td><td>2025-01-30 10:00</td>
+                <td><a href="#" class="btn btn-primary btn-sm" data-view-loan="102">View</a></td>
+              </tr>
+              <tr>
+                <td>100</td><td>James Omondi (256700000001)</td><td>40,000 UGX</td><td>0 UGX</td>
+                <td><span class="status-badge status-paid">PAID</span></td><td>2025-01-28 09:00</td>
+                <td><a href="#" class="btn btn-primary btn-sm" data-view-loan="100">View</a></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <!-- Riders -->
+      <div id="page-riders" class="page">
+        <h1>Riders</h1>
+        <div class="card table-wrap">
+          <table>
+            <thead>
+              <tr><th>ID</th><th>Name</th><th>Phone</th><th>National ID</th><th>Motorcycle</th><th>Stage</th><th>Status</th></tr>
+            </thead>
+            <tbody>
+              <tr><td>1</td><td>John Okello</td><td>256700111111</td><td>CM123456789</td><td>UBA 123A</td><td>Kisenyi</td><td><span class="status-badge status-active">ACTIVE</span></td></tr>
+              <tr><td>2</td><td>Peter Mugisha</td><td>256700222222</td><td>CM987654321</td><td>UBB 456B</td><td>Owino</td><td><span class="status-badge status-active">ACTIVE</span></td></tr>
+              <tr><td>3</td><td>James Omondi</td><td>256700000001</td><td>—</td><td>—</td><td>—</td><td><span class="status-badge status-suspended">SUSPENDED</span></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <!-- Reports -->
+      <div id="page-reports" class="page">
+        <h1>Reports</h1>
+        <div class="card" style="margin-bottom: 1rem; display: flex; justify-content: space-between; align-items: center;">
+          <p style="margin: 0;">Loans report (export-ready)</p>
+          <button type="button" class="btn btn-primary" id="btnExportCsv">Export CSV</button>
+        </div>
+        <div class="card table-wrap">
+          <table>
+            <thead>
+              <tr><th>Loan ID</th><th>Rider</th><th>Principal</th><th>Outstanding</th><th>Penalty</th><th>Status</th><th>Due at</th></tr>
+            </thead>
+            <tbody>
+              <tr><td>101</td><td>John Okello (256700111111)</td><td>50,000</td><td>55,000</td><td>0</td><td><span class="status-badge status-active">ACTIVE</span></td><td>2025-02-01 14:00</td></tr>
+              <tr><td>102</td><td>Peter Mugisha (256700222222)</td><td>30,000</td><td>34,500</td><td>0</td><td><span class="status-badge status-overdue">OVERDUE</span></td><td>2025-01-30 10:00</td></tr>
+              <tr><td>100</td><td>James Omondi (256700000001)</td><td>40,000</td><td>0</td><td>0</td><td><span class="status-badge status-paid">PAID</span></td><td>2025-01-28 09:00</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <!-- Loan detail (shown when View clicked) -->
+      <div id="page-loan-detail" class="page">
+        <h1>Loan #<span id="detailLoanId">101</span></h1>
+        <div class="card">
+          <h2>Loan details</h2>
+          <table>
+            <tbody>
+              <tr><td>Status</td><td><span class="status-badge status-active" id="detailStatus">ACTIVE</span></td></tr>
+              <tr><td>Principal</td><td id="detailPrincipal">50,000 UGX</td></tr>
+              <tr><td>Service charge</td><td id="detailServiceCharge">5,000 UGX</td></tr>
+              <tr><td>Outstanding</td><td id="detailOutstanding">55,000 UGX</td></tr>
+              <tr><td>Total penalty</td><td id="detailPenalty">0 UGX</td></tr>
+              <tr><td>Due at</td><td id="detailDueAt">2025-02-01 14:00</td></tr>
+              <tr><td>Issued at</td><td id="detailIssuedAt">2025-01-31 14:00</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="card">
+          <h2>Rider</h2>
+          <p><strong id="detailRiderName">John Okello</strong> · <span id="detailRiderPhone">256700111111</span> · <span id="detailRiderStatus">ACTIVE</span></p>
+        </div>
+        <div class="card">
+          <h2>Payments (<span id="detailPaymentsCount">2</span>)</h2>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>Amount</th><th>Method</th><th>Time</th></tr></thead>
+              <tbody id="detailPaymentsBody">
+                <tr><td>20,000 UGX</td><td>CASH</td><td>2025-02-01 10:00</td></tr>
+                <tr><td>10,000 UGX</td><td>MTN</td><td>2025-01-31 18:00</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+        <div class="card">
+          <h2>Admin adjustment</h2>
+          <form id="adminAdjustForm">
+            <div class="form-group">
+              <label>Outstanding balance</label>
+              <input type="number" step="0.01" min="0" value="55000" class="full-width" id="adjustOutstanding" style="max-width: 320px;" />
+            </div>
+            <div class="form-group">
+              <label>Total penalty</label>
+              <input type="number" step="0.01" min="0" value="0" class="full-width" id="adjustPenalty" style="max-width: 320px;" />
+            </div>
+            <div class="form-group">
+              <label>Status</label>
+              <select class="full-width" id="adjustStatus" style="max-width: 320px;">
+                <option value="ACTIVE" selected>ACTIVE</option>
+                <option value="OVERDUE">OVERDUE</option>
+                <option value="PAID">PAID</option>
+              </select>
+            </div>
+            <button type="submit" class="btn btn-primary">Save changes</button>
+          </form>
+        </div>
+        <div class="detail-actions">
+          <a href="#" class="btn btn-primary" id="backFromDetail">← Back to Loans</a>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <script>
+    (function() {
+      var loginPage = document.getElementById('loginPage');
+      var app = document.getElementById('app');
+      var pages = document.querySelectorAll('.page');
+      var navLinks = document.querySelectorAll('.nav-link');
+      var loanDetailPage = document.getElementById('page-loan-detail');
+
+      function showApp() {
+        loginPage.style.display = 'none';
+        app.classList.add('visible');
+        showPage('dashboard');
+      }
+
+      function showLogin() {
+        app.classList.remove('visible');
+        loginPage.style.display = 'flex';
+      }
+
+      function showPage(id) {
+        pages.forEach(function(p) {
+          p.classList.toggle('visible', p.id === 'page-' + id);
+        });
+        navLinks.forEach(function(a) {
+          var linkPage = a.getAttribute('data-page');
+          a.classList.toggle('active', linkPage === id && linkPage !== undefined);
+        });
+      }
+
+      function showLoanDetail(loanId) {
+        var sample = {
+          100: { status: 'PAID', principal: '40,000', serviceCharge: '4,000', outstanding: '0', penalty: '0', dueAt: '2025-01-28 09:00', issuedAt: '2025-01-27 09:00', rider: 'James Omondi', phone: '256700000001', riderStatus: 'SUSPENDED', payments: [{ amount: '44,000', method: 'CASH', time: '2025-01-28 08:00' }] },
+          101: { status: 'ACTIVE', principal: '50,000', serviceCharge: '5,000', outstanding: '55,000', penalty: '0', dueAt: '2025-02-01 14:00', issuedAt: '2025-01-31 14:00', rider: 'John Okello', phone: '256700111111', riderStatus: 'ACTIVE', payments: [{ amount: '20,000', method: 'CASH', time: '2025-02-01 10:00' }, { amount: '10,000', method: 'MTN', time: '2025-01-31 18:00' }] },
+          102: { status: 'OVERDUE', principal: '30,000', serviceCharge: '3,000', outstanding: '34,500', penalty: '1,500', dueAt: '2025-01-30 10:00', issuedAt: '2025-01-29 10:00', rider: 'Peter Mugisha', phone: '256700222222', riderStatus: 'ACTIVE', payments: [] }
+        };
+        var d = sample[loanId] || sample[101];
+        document.getElementById('detailLoanId').textContent = loanId;
+        document.getElementById('detailStatus').textContent = d.status;
+        document.getElementById('detailStatus').className = 'status-badge status-' + d.status.toLowerCase();
+        document.getElementById('detailPrincipal').textContent = d.principal + ' UGX';
+        document.getElementById('detailServiceCharge').textContent = d.serviceCharge + ' UGX';
+        document.getElementById('detailOutstanding').textContent = d.outstanding + ' UGX';
+        document.getElementById('detailPenalty').textContent = d.penalty + ' UGX';
+        document.getElementById('detailDueAt').textContent = d.dueAt;
+        document.getElementById('detailIssuedAt').textContent = d.issuedAt;
+        document.getElementById('detailRiderName').textContent = d.rider;
+        document.getElementById('detailRiderPhone').textContent = d.phone;
+        document.getElementById('detailRiderStatus').textContent = d.riderStatus;
+        document.getElementById('adjustOutstanding').value = d.outstanding.replace(/,/g, '');
+        document.getElementById('adjustPenalty').value = d.penalty.replace(/,/g, '');
+        document.getElementById('adjustStatus').value = d.status;
+        var paymentsBody = document.getElementById('detailPaymentsBody');
+        var paymentsCount = document.getElementById('detailPaymentsCount');
+        if (paymentsBody) {
+          paymentsBody.innerHTML = d.payments.length ? d.payments.map(function(p) {
+            return '<tr><td>' + p.amount + ' UGX</td><td>' + p.method + '</td><td>' + p.time + '</td></tr>';
+          }).join('') : '<tr><td colspan="3">No payments yet</td></tr>';
+        }
+        if (paymentsCount) paymentsCount.textContent = d.payments.length;
+        pages.forEach(function(p) { p.classList.remove('visible'); });
+        loanDetailPage.classList.add('visible');
+        navLinks.forEach(function(a) { a.classList.remove('active'); });
+      }
+
+      document.getElementById('loginForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        showApp();
+      });
+
+      document.getElementById('btnLogout').addEventListener('click', showLogin);
+
+      navLinks.forEach(function(a) {
+        a.addEventListener('click', function(e) {
+          e.preventDefault();
+          var page = a.getAttribute('data-page');
+          if (page) showPage(page);
+        });
+      });
+
+      document.querySelectorAll('[data-view-loan]').forEach(function(a) {
+        a.addEventListener('click', function(e) {
+          e.preventDefault();
+          showLoanDetail(parseInt(a.getAttribute('data-view-loan'), 10));
+        });
+      });
+
+      document.getElementById('backFromDetail').addEventListener('click', function(e) {
+        e.preventDefault();
+        showPage('loans');
+      });
+
+      document.getElementById('adminAdjustForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        alert('Preview only — no changes saved.');
+      });
+
+      document.getElementById('btnExportCsv').addEventListener('click', function() {
+        var csv = 'loan_id,rider_name,rider_phone,principal_amount,outstanding_balance,total_penalty,status,due_at\n"101","John Okello","256700111111","50000","55000","0","ACTIVE","2025-02-01 14:00"\n"102","Peter Mugisha","256700222222","30000","34500","0","OVERDUE","2025-01-30 10:00"';
+        var blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+        var url = URL.createObjectURL(blob);
+        var a = document.createElement('a');
+        a.href = url;
+        a.download = 'loans-report-preview.csv';
+        a.click();
+        URL.revokeObjectURL(url);
+      });
+    })();
+  </script>
+</body>
+</html>
